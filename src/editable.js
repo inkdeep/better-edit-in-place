@@ -15,17 +15,18 @@ var Editable = Class.create({
         this.field = this.parseField();
         this.value = this.element.innerHTML;
 
-        var dimensions = this.element.getDimensions(),
-            div = new Element('div', { 'class' : 'editable-outer' });
+        if (!this.element.up().hasClassName('editable-outer')) {
+          var dimensions = this.element.getDimensions(),
+              div = new Element('div', { 'class' : 'editable-outer' });
 
-        $(div).setStyle({
-          'style' : 'z-index:1',
-          'position': 'relative',
-          'width': dimensions.width+'px',
-          'height': dimensions.height+'px'
-        });
-        Element.wrap(this.element, div);
-
+          $(div).setStyle({
+            style : 'z-index:1',
+            position : 'relative',
+            width : dimensions.width+'px',
+            height : dimensions.height+'px'
+          });
+          Element.wrap(this.element, div);
+        }
         this.setupForm();
         this.setupBehaviors();
     },
@@ -49,9 +50,9 @@ var Editable = Class.create({
     // authenticity_token for the AJAX request.
     setupForm: function() {
         this.editForm = new Element('form', {
-            'action': this.element.readAttribute('rel'),
-            'style':'display:none;position:absolute;white-space:nowrap;z-index:+1',
-            'class':'in-place-editor'
+            'action' : this.element.readAttribute('rel'),
+            'style'  : 'display:none',
+            'class'  : 'in-place-editor'
         });
 
         this.setupInputElement();
@@ -124,7 +125,7 @@ var Editable = Class.create({
             this.editField.element.observe('blur', this.cancel.bind(this));
             this.editField.element.observe('change', this.save.bind(this));
         } else {
-            // Copy value of the element to the input or leave blank when there is no value
+            // Copy value of the element to the input - leave empty if there is no value
             this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
         }
     },
@@ -192,7 +193,9 @@ var Editable = Class.create({
     // Event handler that restores original editable value and hides form.
     cancel: function(event) {
         this.element.show();
-        this.editField.element.value = this.value;
+        // Copy value of the element to the input - leave empty if there is no value
+        this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
+
         this.editForm.hide();
         if (event) {
             event.stop();
