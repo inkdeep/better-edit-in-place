@@ -3,7 +3,7 @@ h1. Better Edit in Place
 The default "in_place_editing" plugin for Rails is disappointing. This is my
 solution.
 
-h3. Features
+h2. Features
 
 * Support for nested resources
 * RESTful. Just add a line to your @respond_to@ block to render as JSON.
@@ -32,17 +32,21 @@ To load this file with your Rails app simply add the following line to your layo
 
 If you're using the classic way of handling events:
 
+<pre>
   document.observe('dom:loaded', function(event) {
     Editable.setupAll();
   });
+</pre>
 
 Another solution is to use event delegation:
 
+<pre>
   document.delegators('click', {
     '.editable': function(element) {
       element.editable();
     }
   });
+</pre>
 
 To make an element editable, give it the class name @editable@. You can use different
 class name, but in this case you need to pass it to Editable.setupAll method 
@@ -54,7 +58,7 @@ the attribute to be edited. You can also add the record's id as well, so
 as not to have multiple elements with the same id in the same page. All in,
 an editable element's attributes look like this:
 
-<pre>class="editable" id="list_1_name" rel="/lists/1"</pre>
+<pre><span class="editable" id="list_1_name" rel="/lists/1">…value…</span></pre>
 
 When the element is clicked, it will be hidden, and an input will appear
 that will allow the user to change the field. You must have an appropriate
@@ -62,99 +66,159 @@ respond_to set in your controller that renders the record as a JSON response.
 
 A Rails example:
 
+<pre>
   respond_to do |format|
     format.html # Whatever
     format.json { render :json => @list }
   end
+</pre>
 
-h3. Using it with Rails
+h2. Using it with Rails
 
 If you're using this plugin in a Rails app, you can use the following view
 helper to simplify the markup for your editable element:
 
-  edit_in_place(@list, :name)
+<pre>edit_in_place(@list, :name)</pre>
 
 By default, the edit-in-place tag will be a @<span>@ element. You can override
 this using the @:tag@ option:
 
-  edit_in_place(@list, :name, :tag => :h1)
+<pre>edit_in_place(@list, :name, :tag => :h1)</pre>
 
-h4. Nested Resources
+h3. Conditional Editing
+
+If you only want to allow editing when certain conditions are met, passing @:allow@ with either true or false will
+allow (or not) in place editing.
+<pre>edit_in_place(@list, :name, :allow => @list.finalized? )</pre>
+
+If the non-editable field has an empty or nil value it will render the attribute name:
+
+<pre><i title="This information is missing.">[name]</i></pre>
+
+*NOTE*  
+This will only happen if @:allow@ is passed false and the attribute returns true when @blank?@ is called
+on it.
+
+When editable attributes have no value the in place editor will have a default @:empty_message@ :
+
+If name is @blank?@:
+
+<pre>edit_in_place(@list, :name)</pre>
+
+Will produce:
+
+<pre><span class="editable" id="list_1_name" rel="/lists/1">[name]</span></pre>
+
+If name is @blank?@ and an @:empty_message@ is set:
+
+<pre>edit_in_place(@list, :name, :empty_message => 'enter name')</pre>
+
+Will produce:
+
+<pre><span class="editable" id="list_1_name" rel="/lists/1">enter name</span></pre>
+
+Setting @:edit_blank@ to false will render an empty span with an attached in place edit form if the value is @blank?@.
+
+
+h3. Nested Resources
 
 Better Edit in Place also works seamlessly with nested resources. Just pass
 in the resources as an array. This will update an item's @name@ attribute:
 
-  edit_in_place([@list, @item], :name)
+<pre>edit_in_place([@list, @item], :name)</pre>
   
 The @list_item_path@ will be determined automatically. If you wish to
 pass a different URL in, you can do that as well:
 
-  edit_in_place([@list, @item], :name, :url => weird_item_path(@item))
+<pre>edit_in_place([@list, @item], :name, :url => weird_item_path(@item))</pre>
 
-h4. If you're using a newer version of Rails...
+h3. If you're using a newer version of Rails...
 
 You might need to tell ActiveRecord not to include the root while serializing
 to JSON. To do so, put this line in an initializer, or environment.rb:
 
-  ActiveRecord::Base.include_root_in_json = false
+<pre>ActiveRecord::Base.include_root_in_json = false</pre>
 
-h3. Customizations
+h4. List of Rails configuration options:
 
-h4. Input types
+@:id@    
+@:tag@    
+@:url@    
+@:rel@    
+@:edit_blank@    
+@:empty_message@    
+@:allow@    
 
-By default input text element is used. To change it to text area or select, you need to set
+h2. Customizations
+
+h3. Input types
+
+By default input text element is used. To change it to text area, check box, or select, you need to set
 editField type:
 
+<pre>
   document.delegators('click', {
     '.editable': function(element) {
       element.editable({
-        editField: {'type': 'textarea'} // or 'select'
+        editField: {'type': 'textarea'} // or 'select', 'checkbox'
       });
     }
   });
+</pre>
 
-h4. Class names
+The @checkbox@ behaves the same as a @select@ in that when it is changed the value is updated without the need to submit.
+
+h3. Class names
 
 Edit element class name can also be set:
 
+<pre>
     element.editable({
       editField: {
         'type': 'textarea',
         'class': 'editable-input'
       }
     });
+</pre>
 
 Class name can also be set for submit and cancel buttons:
 
+<pre>
     element.editable({
       submitButtonClass: 'editable-submit',
       cancelButtonClass: 'editable-cancel'
     });
+</pre>
 
-h4. Select box options
+h3. Select box options
 
 For select elements you need to specify possible options:
 
+<pre>
     element.editable({
       editField: {
         'type': 'select',
         'options': [["black", "1"], ["gray", "2"], ["white", "3"]]
       }
     });
+</pre>
 
 To load data directly from Rails, you can use to_json method:
 
+<pre>
     element.editable({
       editField: {
         'type': 'select',
         'options': <%= Colors.all.map{|c| [c.name, c.id.to_s]}.to_json %>
       }
     });
+</pre>
 
-h4. Foreign keys (only for select boxes)
+h3. Foreign keys (only for select boxes)
 
 If edited attribute is a foreign key, you need to explicitly specify it:
 
+<pre>
     element.editable({
       editField: {
         'type': 'select',
@@ -162,29 +226,51 @@ If edited attribute is a foreign key, you need to explicitly specify it:
         'foreignKey': true
       }
     });
+</pre>
 
 When using Rails helper, you need to refer to the actual object, instead of the foreign key:
 
-  edit_in_place(@post, :author)
+<pre>edit_in_place(@post, :author)</pre>
 
 You also need to set #to_s method on the associated model i.e.
 
+<pre>
    class Author < ActiveRecord::Base
      def to_s
        name
      end
    end
+</pre>
 
-h4. Ajax.Request callbacks
+h3. Ajax.Request callbacks
 
 You can set custom callbacks for Ajax.Request onLoading and onComplete events:
 
+<pre>
     element.editable({
       onLoading: function() {alert("Loading...")};
       onComplete: function() {alert("Request completed")};
     });
+</pre>
+
+h3. List of javascript configurable options.
+
+Configurable options:
+
+|_.option |_.default |
+| editField.type | 'input' |
+| _size |  '30x5' (only used with text_field and text_area input types) |
+| submitButtonClass | inplace-submit |
+| cancelButtonClass | inplace-cancel |
+| saveText | Save |
+| cancelText | Cancel |
+| onLoading | Prototype.emptyFunction |
+| onComplete | Prototype.emptyFunction |
+| afterSave | false (can be passed a function to act on updated element such as changing the class)|
 
 h3. TODO
+
+* Clean up _size setting handling
 
 * Escape key should cancel (simple event handler)
 * Maybe some more options (but not too many)

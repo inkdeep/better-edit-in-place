@@ -7,14 +7,21 @@ var Editable = Class.create({
         Object.extend(this, options);
 
         // Set default values for options
-        this.editField = this.editField || {};
-        this.editField.type = this.editField.type || 'input';
-        this.onLoading = this.onLoading || Prototype.emptyFunction;
-        this.onComplete = this.onComplete || Prototype.emptyFunction;
+        this.editField         = this.editField         || {};
+        this.editField.type    = this.editField.type    || 'input';
+        this._size             = this._size             || '30x5';
+        this.submitButtonClass = this.submitButtonClass || 'inplace-submit';
+        this.cancelButtonClass = this.cancelButtonClass || 'inplace-cancel';
+        this.saveText          = this.saveText          || Editable.options.saveText;
+        this.cancelText        = this.cancelText        || Editable.options.cancelText;
 
-        this.field = this.parseField();
-        this.value = this.element.innerHTML;
+        this.onLoading         = this.onLoading         || Prototype.emptyFunction;
+        this.onComplete        = this.onComplete        || Prototype.emptyFunction;
+        this.afterSave         = this.afterSave         || Editable.options.afterSave;
 
+        this.field             = this.parseField();
+        this.value             = this.element.innerHTML;
+        
         if (!this.element.up().hasClassName('editable-outer')) {
           var dimensions = this.element.getDimensions(),
               div = new Element('div', { 'class' : 'editable-outer' });
@@ -57,78 +64,118 @@ var Editable = Class.create({
 
         this.setupInputElement();
 
+        if(this.editField['class']) this.editField.element.addClassName(this.editField['class']);
+
+        if(this.editField.type == 'textarea') {
+          var _cols_rows = this._size.split('x');
+          this.editField.element.writeAttribute({
+            'cols' : _cols_rows[0],
+            'rows' : _cols_rows[1] 
+          });
+        }
+
         if (this.editField.tag != 'select') {
             this.saveInput = new Element('input', {
-                type:'submit',
-                value: Editable.options.saveText
+                type  : 'submit',
+                value : this.saveText //Editable.options.saveText
             });
             if (this.submitButtonClass) this.saveInput.addClassName(this.submitButtonClass);
 
             this.cancelLink = new Element('a', {
-                href:'#'
-            }).update(Editable.options.cancelText);
+                href : '#'
+            }).update(this.cancelText); //Editable.options.cancelText
             if (this.cancelButtonClass) this.cancelLink.addClassName(this.cancelButtonClass);
         }
 
         var methodInput = new Element('input', {
-            type:'hidden',
-            value:'put',
-            name:'_method'
+            type  : 'hidden',
+            value : 'put',
+            name  : '_method'
         });
         if (typeof(window._token) != 'undefined') {
             this.editForm.insert(new Element('input', {
-                type: 'hidden',
-                value: window._token,
-                name: 'authenticity_token'
+                type  : 'hidden',
+                value : window._token,
+                name  : 'authenticity_token'
             }));
         }
 
         this.editForm.insert(this.editField.element);
-        if (this.editField.type != 'select') {
+        if (this.editField.hiddenElement) this.editForm.insert(this.editField.hiddenElement);
+        
+        if (!$w('select checkbox').include(this.editField.type)) {
             this.editForm.insert(this.saveInput);
             this.editForm.insert(this.cancelLink);
         }
         this.editForm.insert(methodInput);
         this.element.insert({
-            after: this.editForm
+            after : this.editForm
         });
     },
 
     // Create input element - text input, text area or select box.
     setupInputElement: function() {
-        this.editField.element = new Element(this.editField.type, {
-            'name':this.field,
-            'id':('edit_' + this.element.id)
-        });
-        if(this.editField['class']) this.editField.element.addClassName(this.editField['class']);
+        switch(this.editField.type){
+        case 'select':
+          this.configureInput();
+          // Create options
+          var options = this.editField.options.map(function(option) {
+              return new Option(option[0], option[1]);
+          });
+          // And assign them to select element
+          options.each(function(option, index) {
+              this.editField.element.options[index] = options[index];
+          }.bind(this));
 
-        if(this.editField.type == 'select') {
-            // Create options
-            var options = this.editField.options.map(function(option) {
-                return new Option(option[0], option[1]);
-            });
-            // And assign them to select element
-            options.each(function(option, index) {
-                this.editField.element.options[index] = options[index];
-            }.bind(this));
+          // Set selected option
+          try {
+              this.editField.element.selectedIndex = $A(this.editField.element.options).find(function(option) {
+                return option.text == this.element.innerHTML;
+              }.bind(this)).index;
+          } catch(e) {
+              this.editField.element.selectedIndex = 0;
+          }
 
-            // Set selected option
-            try {
-                this.editField.element.selectedIndex = $A(this.editField.element.options).find(function(option) {
-                    return option.text == this.element.innerHTML;
-            }.bind(this)).index;
-            } catch(e) {
-                this.editField.element.selectedIndex = 0;
-            }
-
-            // Set event handlers to automatically submit form when option is changed
-            this.editField.element.observe('blur', this.cancel.bind(this));
-            this.editField.element.observe('change', this.save.bind(this));
-        } else {
-            // Copy value of the element to the input - leave empty if there is no value
-            this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
+          // Set event handlers to automatically submit form when option is changed
+          this.editField.element.observe('blur', this.cancel.bind(this));
+          this.editField.element.observe('change', this.save.bind(this));
+          break;
+        case 'checkbox':
+          var _checkit    = $w('true yes').include(this.value) ? 'checked' : '';
+          this.editField.element = new Element('input', {
+              'name'    : this.field,
+              'id'      : ('edit_' + this.element.id),
+              'value'   : '1',
+              'type'    : 'checkbox'
+          });
+          if (_checkit) this.editField.element.writeAttribute({ 'checked' : _checkit });
+          this.editField.hiddenElement = new Element('input', {
+              'name'  : this.field,
+              'type'  : 'hidden',
+              'value' : '0'
+          });
+          
+          // Set event handlers to automatically submit form when checkbox is checked/unchecked
+          this.editField.element.observe('blur', this.cancel.bind(this));
+          this.editField.element.observe('change', this.save.bind(this));
+          break;
+        default:
+          this.configureInput();
+          // Copy value of the element to the input
+          this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
+          if (this._size) this.editField.element.writeAttribute({ 'size' : this._size });
         }
+
     },
+    
+    configureInput : function () {
+      this.editField.element = new Element(this.editField.type, {
+          'name' : this.field,
+          'id'   : ('edit_' + this.element.id)
+      });
+      if(this.editField['class']) this.editField.element.addClassName(this.editField['class']);
+    },
+
 
     // Sets up event handles for editable.
     setupBehaviors: function() {
@@ -173,8 +220,8 @@ var Editable = Class.create({
                 this.editField.element.value = this.value;
                 this.element.update(this.value);
                 this.editForm.enable();
-                if (Editable.afterSave) {
-                    Editable.afterSave(this);
+                if (this.afterSave) {
+                    this.afterSave(this);
                 }
                 this.cancel();
             }.bind(this),
@@ -218,7 +265,8 @@ var Editable = Class.create({
 Object.extend(Editable, {
     options: {
         saveText: 'Save',
-        cancelText: 'Cancel'
+        cancelText: 'Cancel',
+        afterSave  : false
     },
     create: function(element) {
         new Editable(element);

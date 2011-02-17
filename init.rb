@@ -3,7 +3,10 @@ module Nakajima
     def edit_in_place(resource, field, options={})
       # Get record to be edited. If resource is an array, pull it out.
       record = resource.is_a?(Array) ? resource.last : resource
-
+      if options.delete(:allow) == false
+        return record.send(field).blank? ? %(<i title="This information is missing.">[#{field.to_s.humanize}]</i>) : record.send(field)
+      end
+      
       options[:id]  ||= "#{dom_id(record)}_#{field}"
       options[:tag] ||= :span
       options[:url] ||= url_for(resource)
@@ -17,7 +20,6 @@ module Nakajima
       classes << 'editable' if classes.empty?
       options[:class] = classes.uniq.join(' ')
       
-      
       if record.send(field).blank? && options.delete(:edit_blank)
         options[:class] << ' novalue'
         data = options.delete(:empty_message)
@@ -28,7 +30,7 @@ module Nakajima
       options.delete(:edit_blank)
       options.delete(:empty_message)
       
-      content_tag(options.delete(:tag), data, options)
+      content_tag(:span, content_tag(options.delete(:tag), data, options), :class => 'edit-outer')
     end
   end  
 end
