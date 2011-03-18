@@ -23,6 +23,8 @@
 
 <div id="post_5_author" rel="http://localhost:4567/posts/5" class="editable">Mike Rotch</div>
 
+<div id="delegated_post_6_author" rel="http://localhost:4567/posts/5" class="editable">The Crime</div>
+
 <!-- Log output -->
 <div id="testlog"> </div>
 
@@ -30,6 +32,19 @@
 <script type="text/javascript" language="javascript" charset="utf-8">
 // <![CDATA[
 
+function delegated (e){
+  return $(e).observe('click', function() {
+     this.editable({
+        editField: {
+          type: 'select',
+          options: [['Master Blaster', '3'], ['The Crime', '4']],
+          foreignKey: true
+        }
+      });
+      
+    });
+  };
+  
 new Test.Unit.Runner({
   
   setup: function() {
@@ -77,7 +92,7 @@ new Test.Unit.Runner({
   
   testShouldAllowCustomSaveLabels: function() {
     this.list.editForm.remove();
-    Editable.options.saveText = 'done!'
+    this.list.saveText = 'done!' //Editable.options.saveText = 'done!'
     this.list.setupForm();
     var saveButton = this.list.editForm.select('input[type=submit]').first();
     this.assertEqual('done!', saveButton.readAttribute('value'));
@@ -85,7 +100,7 @@ new Test.Unit.Runner({
   
   testShouldAllowCustomCancelLabels: function() {
     this.list.editForm.remove();
-    Editable.options.cancelText = 'quit!'
+    this.list.cancelText = 'quit!'  //Editable.options.cancelText = 'quit!'
     this.list.setupForm();
     var cancelLink = this.list.editForm.select('a').first();
     this.assertEqual('quit!', cancelLink.innerHTML);
@@ -115,18 +130,28 @@ new Test.Unit.Runner({
     this.assertNotVisible(this.list.element);
   },
   
-  testShouldSave: function() {
+  testShouldSave: function() { this.list.foo = 'testShouldSave';
     var properResult = "This is a new value. Dude.";
     var form = this.list.element.next('form');
     this.list.edit({ stop: Prototype.K });
     this.list.editField.element.value = properResult;
-    this.list.save({ element: function() { return form; }, stop: Prototype.K });
+    this.list.save({ element:  function(){ return form; }, stop: Prototype.K });
     this.wait(300, function() {
+      this.assertEqual(properResult, this.list.element.innerHTML);
       this.assertEqual(properResult, this.list.element.innerHTML);
       this.assertEqual(properResult, this.list.value);
       this.assertVisible(this.list.element);
       this.assertNotVisible(this.list.editForm);
     });
+  },
+///////////////////////------------------------------///////////////////////------------------------------///////////////////////
+  testShouldAddEditToDelegated: function() {
+    this.other_post = delegated('delegated_post_6_author');
+    Event.simulateMouse('delegated_post_6_author', 'click');
+
+    this.assert(this.other_post.next('form'), "didn't add editable to object on delegated event");
+    this.assertNotVisible(this.other_post);
+    this.assertVisible(this.other_post.next('form'));
   },
   
   testShouldCancelForm: function() {
@@ -157,8 +182,9 @@ new Test.Unit.Runner({
     this.assertNotVisible(this.list.element);
     this.assertVisible(this.list.editForm);
     
+this.list.foo = 'testShouldHandleBehaviors';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     Event.simulateMouse(form, 'submit');
-    
+
     this.wait(300, function() {
       this.assertVisible(this.list.element);
       this.assertNotVisible(this.list.editForm);
@@ -171,8 +197,10 @@ new Test.Unit.Runner({
       this.called = true;
       this.assertEqual(this.list, editable);
     }.bind(this);
+this.list.foo = 'testShouldCallAfterSaveCallback';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     this.list.save();
     this.wait(300, function() {
+      this.assertNotNullOrUndefined(this.called);
       this.assert(this.called, "didn't call afterSave callback");
     });
   },
@@ -183,7 +211,8 @@ new Test.Unit.Runner({
         onLoading: function() {
             this.called = true;
         }.bind(this)
-    });    
+    }); 
+this.list.foo = 'testShouldCallOnLoadingCallback'; ///////////////////////------------------------------///////////////////////------------------------------///////////////////////  
     this.list.save();
     this.wait(300, function() {
       this.assert(this.called, "didn't call onLoading callback");
@@ -197,6 +226,7 @@ new Test.Unit.Runner({
             this.called = true;
         }.bind(this)
     });
+this.list.foo = 'testShouldCallOnCompleteCallback';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     this.list.save();
     this.wait(300, function() {
       this.assert(this.called, "didn't call onComplete callback");
@@ -250,14 +280,16 @@ new Test.Unit.Runner({
   },
 
   testShouldSaveForeignKeyAttribute: function() {
+this.list.foo = 'testShouldSaveForeignKeyAttribute';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     this.post = new Editable('post_5_author', {
-        editField: {
-            type: 'select',
-            options: [['Mike Rotch', '1'], ['I. P. Freely', '2']],
-            foreignKey: true
+        'editField': {
+            'type': 'select',
+            'options': [['Mike Rotch', '1'], ['I. P. Freely', '2']],
+            'foreignKey': true
         }
     });
     this.post.editField.element.selectedIndex = 1;
+
     this.post.save();
     
     this.wait(300, function() {
@@ -267,7 +299,7 @@ new Test.Unit.Runner({
 
   teardown: function() {
     this.list.clobber();
-    this.user.clobber();    
+    this.user.clobber();
     this.post.clobber();
     this.color.clobber();
   }

@@ -26,3 +26,9 @@ put '/posts/5.json' do
   post = { :post => { :author_id => params['post']['author_id'] } }
   post.to_json
 end
+
+
+put '/posts/6.json' do
+  post = { :post => { :author_id => params['post']['author_id'] } }
+  post.to_json
+end

@@ -17,7 +17,7 @@ var Editable = Class.create({
 
         this.onLoading         = this.onLoading         || Prototype.emptyFunction;
         this.onComplete        = this.onComplete        || Prototype.emptyFunction;
-        this.afterSave         = this.afterSave         || Editable.options.afterSave;
+        this.afterSave         = this.afterSave         || Editable.afterSave;
 
         this.field             = this.parseField();
         this.value             = this.element.innerHTML;
@@ -100,8 +100,8 @@ var Editable = Class.create({
             }));
         }
 
-        this.editForm.insert(this.editField.element);
         if (this.editField.hiddenElement) this.editForm.insert(this.editField.hiddenElement);
+        this.editForm.insert(this.editField.element);
         
         if (!$w('select checkbox').include(this.editField.type)) {
             this.editForm.insert(this.saveInput);
@@ -141,7 +141,7 @@ var Editable = Class.create({
           this.editField.element.observe('change', this.save.bind(this));
           break;
         case 'checkbox':
-          var _checkit    = $w('true yes').include(this.value) ? 'checked' : '';
+          var _checkit    = $w('true yes 1').include(this.value) ? 'checked' : '';
           this.editField.element = new Element('input', {
               'name'    : this.field,
               'id'      : ('edit_' + this.element.id),
@@ -193,7 +193,7 @@ var Editable = Class.create({
     },
 
     // Event handler that makes request to server, then handles a JSON response.
-    save: function(event) {
+    save: function(event) { event ? console.log(this.foo,'   |   [editable.js:196] event.element: ',event.element().down('input',1).value) : console.log('no event  |  ',this.foo);
         var pars = this.editForm.serialize(true);
         var url = this.editForm.readAttribute('action');
         this.editForm.disable();
@@ -220,8 +220,8 @@ var Editable = Class.create({
                 this.editField.element.value = this.value;
                 this.element.update(this.value);
                 this.editForm.enable();
-                if (this.afterSave) {
-                    this.afterSave(this);
+                if (Editable.afterSave) {
+                    Editable.afterSave(this);
                 }
                 this.cancel();
             }.bind(this),
@@ -241,7 +241,8 @@ var Editable = Class.create({
     cancel: function(event) {
         this.element.show();
         // Copy value of the element to the input - leave empty if there is no value
-        this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
+        // if (this.editField.type != 'select') 
+          this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
 
         this.editForm.hide();
         if (event) {
@@ -265,9 +266,9 @@ var Editable = Class.create({
 Object.extend(Editable, {
     options: {
         saveText: 'Save',
-        cancelText: 'Cancel',
-        afterSave  : false
+        cancelText: 'Cancel'
     },
+
     create: function(element) {
         new Editable(element);
     },
@@ -280,7 +281,7 @@ Object.extend(Editable, {
 
 // Helper method for event delegation
 Element.addMethods({
-    editable: function(element, options) { //console.log(options);
+    editable: function(element, options) {
         new Editable(element, options).edit();
     }
 });
