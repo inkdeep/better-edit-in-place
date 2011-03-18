@@ -253,28 +253,45 @@ You can set custom callbacks for Ajax.Request onLoading and onComplete events:
     });
 </pre>
 
+h3. After save callbacks
+
+Custom functions can be fired after @onComplete@ finishes, allowing for further page manipulation.
+
+<pre>
+    element.editable({
+        editField: {
+          type: 'checkbox'
+        },
+        afterSave : function (edited) {
+          if (edited.element) edited.element.toggleClassName('true').toggleClassName('false');
+        }
+      });
+</pre>
+
 h3. List of javascript configurable options.
 
 Configurable options:
 
 |_.option |_.default |
 | editField.type | 'input' |
-| _size |  '30x5' (only used with text_field and text_area input types) |
+| fieldSize |  '30x5' (only used with text_field and text_area input types) |
 | submitButtonClass | inplace-submit |
 | cancelButtonClass | inplace-cancel |
 | saveText | Save |
 | cancelText | Cancel |
 | onLoading | Prototype.emptyFunction |
 | onComplete | Prototype.emptyFunction |
-| afterSave | false (can be passed a function to act on updated element such as changing the class)|
+| afterSave | false (can be passed a function to act on updated element or page )|
 
 h3. TODO
-
-* Clean up _size setting handling
 
 * Escape key should cancel (simple event handler)
 * Maybe some more options (but not too many)
 
 * Instead of adding .json to URL, set proper content-type
+
+* Clean up fieldSize setting handling
+* Figure out how to have inline elements not collapse and reflow page when edit 
+  form is absolute positioned and/or is larger than containing element.
 
 Copyright (c) 2008 Pat Nakajima

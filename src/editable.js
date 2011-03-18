@@ -9,7 +9,7 @@ var Editable = Class.create({
         // Set default values for options
         this.editField         = this.editField         || {};
         this.editField.type    = this.editField.type    || 'input';
-        this._size             = this._size             || '30x5';
+        this.fieldSize         = this.fieldSize         || '30x5';
         this.submitButtonClass = this.submitButtonClass || 'inplace-submit';
         this.cancelButtonClass = this.cancelButtonClass || 'inplace-cancel';
         this.saveText          = this.saveText          || Editable.options.saveText;
@@ -27,10 +27,10 @@ var Editable = Class.create({
               div = new Element('div', { 'class' : 'editable-outer' });
 
           $(div).setStyle({
-            style : 'z-index:1',
-            position : 'relative',
-            width : dimensions.width+'px',
-            height : dimensions.height+'px'
+            // style : 'z-index:1',
+            // position : 'relative',
+            // width : dimensions.width+'px',
+            // height : dimensions.height+'px'
           });
           Element.wrap(this.element, div);
         }
@@ -67,7 +67,7 @@ var Editable = Class.create({
         if(this.editField['class']) this.editField.element.addClassName(this.editField['class']);
 
         if(this.editField.type == 'textarea') {
-          var _cols_rows = this._size.split('x');
+          var _cols_rows = this.fieldSize.split('x');
           this.editField.element.writeAttribute({
             'cols' : _cols_rows[0],
             'rows' : _cols_rows[1] 
@@ -137,8 +137,7 @@ var Editable = Class.create({
           }
 
           // Set event handlers to automatically submit form when option is changed
-          this.editField.element.observe('blur', this.cancel.bind(this));
-          this.editField.element.observe('change', this.save.bind(this));
+          this.submitOnChange();
           break;
         case 'checkbox':
           var _checkit    = $w('true yes 1').include(this.value) ? 'checked' : '';
@@ -156,14 +155,13 @@ var Editable = Class.create({
           });
           
           // Set event handlers to automatically submit form when checkbox is checked/unchecked
-          this.editField.element.observe('blur', this.cancel.bind(this));
-          this.editField.element.observe('change', this.save.bind(this));
+          this.submitOnChange();
           break;
         default:
           this.configureInput();
           // Copy value of the element to the input
           this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
-          if (this._size) this.editField.element.writeAttribute({ 'size' : this._size });
+          if (this.fieldSize) this.editField.element.writeAttribute({ 'size' : this.fieldSize });
         }
 
     },
@@ -176,7 +174,12 @@ var Editable = Class.create({
       if(this.editField['class']) this.editField.element.addClassName(this.editField['class']);
     },
 
-
+    // Sets up onChange submit for select/check box
+    submitOnChange: function () {
+      this.editField.element.observe('blur', this.cancel.bind(this));
+      this.editField.element.observe('change', this.save.bind(this));
+    },
+    
     // Sets up event handles for editable.
     setupBehaviors: function() {
         this.element.observe('click', this.edit.bindAsEventListener(this));
@@ -220,8 +223,11 @@ var Editable = Class.create({
                 this.editField.element.value = this.value;
                 this.element.update(this.value);
                 this.editForm.enable();
-                if (Editable.afterSave) {
-                    Editable.afterSave(this);
+                // if (Editable.afterSave) {
+                //     Editable.afterSave(this);
+                // }
+                if (this.afterSave) {
+                    this.afterSave(this);
                 }
                 this.cancel();
             }.bind(this),
