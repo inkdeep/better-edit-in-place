@@ -144,7 +144,7 @@ new Test.Unit.Runner({
       this.assertNotVisible(this.list.editForm);
     });
   },
-///////////////////////------------------------------///////////////////////------------------------------///////////////////////
+
   testShouldAddEditToDelegated: function() {
     this.other_post = delegated('delegated_post_6_author');
     Event.simulateMouse('delegated_post_6_author', 'click');
@@ -182,7 +182,6 @@ new Test.Unit.Runner({
     this.assertNotVisible(this.list.element);
     this.assertVisible(this.list.editForm);
     
-this.list.foo = 'testShouldHandleBehaviors';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     Event.simulateMouse(form, 'submit');
 
     this.wait(300, function() {
@@ -197,7 +196,6 @@ this.list.foo = 'testShouldHandleBehaviors';///////////////////////-------------
       this.called = true;
       this.assertEqual(this.list, editable);
     }.bind(this);
-this.list.foo = 'testShouldCallAfterSaveCallback';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     this.list.save();
     this.wait(300, function() {
       this.assertNotNullOrUndefined(this.called);
@@ -212,7 +210,6 @@ this.list.foo = 'testShouldCallAfterSaveCallback';///////////////////////-------
             this.called = true;
         }.bind(this)
     }); 
-this.list.foo = 'testShouldCallOnLoadingCallback'; ///////////////////////------------------------------///////////////////////------------------------------///////////////////////  
     this.list.save();
     this.wait(300, function() {
       this.assert(this.called, "didn't call onLoading callback");
@@ -226,7 +223,6 @@ this.list.foo = 'testShouldCallOnLoadingCallback'; ///////////////////////------
             this.called = true;
         }.bind(this)
     });
-this.list.foo = 'testShouldCallOnCompleteCallback';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     this.list.save();
     this.wait(300, function() {
       this.assert(this.called, "didn't call onComplete callback");
@@ -280,7 +276,6 @@ this.list.foo = 'testShouldCallOnCompleteCallback';///////////////////////------
   },
 
   testShouldSaveForeignKeyAttribute: function() {
-this.list.foo = 'testShouldSaveForeignKeyAttribute';///////////////////////------------------------------///////////////////////------------------------------///////////////////////
     this.post = new Editable('post_5_author', {
         'editField': {
             'type': 'select',

@@ -193,7 +193,7 @@ var Editable = Class.create({
     },
 
     // Event handler that makes request to server, then handles a JSON response.
-    save: function(event) { event ? console.log(this.foo,'   |   [editable.js:196] event.element: ',event.element().down('input',1).value) : console.log('no event  |  ',this.foo);
+    save: function(event) {
         var pars = this.editForm.serialize(true);
         var url = this.editForm.readAttribute('action');
         this.editForm.disable();
