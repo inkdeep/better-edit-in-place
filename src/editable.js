@@ -17,7 +17,7 @@ var Editable = Class.create({
 
         this.onLoading         = this.onLoading         || Prototype.emptyFunction;
         this.onComplete        = this.onComplete        || Prototype.emptyFunction;
-        this.afterSave         = this.afterSave         || Editable.afterSave;
+        this.afterSave         = this.afterSave         || Editable.options.afterSave;
 
         this.field             = this.parseField();
         this.value             = this.element.innerHTML;
@@ -163,7 +163,6 @@ var Editable = Class.create({
           this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
           if (this.fieldSize) this.editField.element.writeAttribute({ 'size' : this.fieldSize });
         }
-
     },
     
     configureInput : function () {
@@ -223,9 +222,6 @@ var Editable = Class.create({
                 this.editField.element.value = this.value;
                 this.element.update(this.value);
                 this.editForm.enable();
-                // if (Editable.afterSave) {
-                //     Editable.afterSave(this);
-                // }
                 if (this.afterSave) {
                     this.afterSave(this);
                 }
@@ -247,9 +243,7 @@ var Editable = Class.create({
     cancel: function(event) {
         this.element.show();
         // Copy value of the element to the input - leave empty if there is no value
-        // if (this.editField.type != 'select') 
-          this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
-
+        this.editField.element.value = (this.element.hasClassName('novalue') ? '' : this.element.innerHTML);
         this.editForm.hide();
         if (event) {
             event.stop();
@@ -271,8 +265,9 @@ var Editable = Class.create({
 // Editable class methods.
 Object.extend(Editable, {
     options: {
-        saveText: 'Save',
-        cancelText: 'Cancel'
+        saveText   : 'Save',
+        cancelText : 'Cancel',
+        afterSave  : false
     },
 
     create: function(element) {
